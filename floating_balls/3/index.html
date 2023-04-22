@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Floating Circles</title>
+	<style>
+		canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<script>
+		var canvas = document.getElementById("canvas");
+		var ctx = canvas.getContext("2d");
+
+		// Set canvas width and height
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		// Create an array to store the circles
+		var circles = [];
+
+		// Define the Circle object
+		function Circle(x, y, radius, color) {
+			this.x = x;
+			this.y = y;
+			this.radius = radius;
+			this.color = color;
+			this.vx = Math.random() * 6 - 3;
+			this.vy = Math.random() * 6 - 3;
+			this.isHovered = false;
+		}
+
+		// Add circles to the array
+		for (var i = 0; i < 50; i++) {
+			var radius = Math.random() * 50 + 10;
+			var x = Math.random() * (canvas.width - radius * 2) + radius;
+			var y = Math.random() * (canvas.height - radius * 2) + radius;
+			var color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+			var circle = new Circle(x, y, radius, color);
+			circles.push(circle);
+		}
+
+		// Draw the circles
+		function draw() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			for (var i = 0; i < circles.length; i++) {
+				var circle = circles[i];
+				if (!circle.isHovered) {
+					ctx.beginPath();
+					ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+					ctx.fillStyle = circle.color;
+					ctx.fill();
+				}
+				circle.x += circle.vx;
+				circle.y += circle.vy;
+				if (circle.x < circle.radius || circle.x > canvas.width - circle.radius) {
+					circle.vx = -circle.vx;
+				}
+				if (circle.y < circle.radius || circle.y > canvas.height - circle.radius) {
+					circle.vy = -circle.vy;
+				}
+			}
+			requestAnimationFrame(draw);
+		}
+
+		draw();
+
+		// Add mousemove event listener to canvas
+		canvas.addEventListener("mousemove", function(event) {
+			var mouseX = event.clientX;
+			var mouseY = event.clientY;
+			for (var i = 0; i < circles.length; i++) {
+				var circle = circles[i];
+				if (!circle.isHovered) {
+					var dx = circle.x - mouseX;
+					var dy = circle.y - mouseY;
+					var distance = Math.sqrt(dx * dx + dy * dy);
+					if (distance < circle.radius) {
+						circle.isHovered = true;
+					}
+				}
+			}
+		});
+	</script>
+</body>
+</html>
