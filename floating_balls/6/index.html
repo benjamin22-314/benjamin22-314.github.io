@@ -42,11 +42,9 @@
             this.vx = Math.random() * 6 - 3;
             this.vy = Math.random() * 6 - 3;
             this.isHovered = false;
-            this.framesUntilRandom = 1; //Math.floor(Math.random() * 60) + 60;
-            this.randomFramesCount = 0;
-            this.changesDirectionRandomly = true;
+            this.changesDirectionRandomly = Math.random() < 0.2;
+            this.changeDirectionProb = Math.random() * 0.25
         }
-
 
 		// Add circles to the array
 		for (var i = 0; i < 50; i++) {
@@ -69,9 +67,12 @@
 					ctx.fillStyle = circle.color;
 					ctx.fill();
 				}
-                if (Math.random() < 0.01 && circle.changesDirectionRandomly) {
-                    circle.vx = -circle.vx;
-                    circle.vy = -circle.vy;
+                if (Math.random() < circle.changeDirectionProb && circle.changesDirectionRandomly) {
+                    if (Math.random() < 0.5) {
+                        circle.vx = -circle.vx;
+                    }if (Math.random() < 0.5) {
+                        circle.vy = -circle.vy;
+                    }          
                 }
 				circle.x += circle.vx;
 				circle.y += circle.vy;
@@ -105,7 +106,6 @@
 		});
 
 		function getRandomPastelColor() {
-			// Adapted from https://stackoverflow.com/a/43112246/1461204
 			var hue = Math.floor(Math.random() * 360);
 			var pastel = 'hsl(' + hue + ', 100%, 85%)';
 			return pastel;

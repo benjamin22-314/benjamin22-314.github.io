@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Floating Circles</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background-color: #333333;
+		}
+
+		canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<script>
+		var canvas = document.getElementById("canvas");
+		var ctx = canvas.getContext("2d");
+
+		// Set canvas width and height
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		// Create an array to store the circles
+		var circles = [];
+        var numRemovedCircles = 0;
+        var level = 1;
+        var numCircles = 30;
+        var selectionEventTriggered = false
+
+		// Define the Circle object
+		
+        function Circle(x, y, radius, color) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.vx = Math.random() * 6 - 3;
+            this.vy = Math.random() * 6 - 3;
+            this.isHovered = false;
+            this.changesDirectionRandomly = Math.random() < 0.2;
+            this.changeDirectionProb = Math.random() * 0.25
+            this.disappearedAt = null;
+        }
+
+        function mutateCircle(circle) {
+            circle.x += Math.random() * 2 - 1; // Add a random value between -1 and 1 to x
+            circle.y += Math.random() * 2 - 1; // Add a random value between -1 and 1 to y
+            circle.radius += Math.random() * 2 - 1; // Add a random value between -1 and 1 to radius
+            circle.vx *= Math.random() * 0.1 + 0.95;
+            circle.vy  *= Math.random() * 0.1 + 0.95;
+            circle.changeDirectionProb *= Math.random() * 0.1 + 0.95;;
+        }
+
+		// Add circles to the array
+		for (var i = 0; i < numCircles; i++) {
+			var radius = Math.random() * 50 + 10;
+			var x = Math.random() * (canvas.width - radius * 2) + radius;
+			var y = Math.random() * (canvas.height - radius * 2) + radius;
+			var color = getRandomPastelColor();
+			var circle = new Circle(x, y, radius, color);
+			circles.push(circle);
+		}
+
+		// Draw the circles
+		function draw() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the level number in the top-left corner
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "20px Arial";
+            ctx.fillText("Level " + level, 10, 30);
+
+			for (var i = 0; i < circles.length; i++) {
+				var circle = circles[i];
+				if (!circle.isHovered) {
+					ctx.beginPath();
+					ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+					ctx.fillStyle = circle.color;
+					ctx.fill();
+				}
+                if (Math.random() < circle.changeDirectionProb && circle.changesDirectionRandomly) {
+                    if (Math.random() < 0.5) {
+                        circle.vx = -circle.vx;
+                    }if (Math.random() < 0.5) {
+                        circle.vy = -circle.vy;
+                    }          
+                }
+				circle.x += circle.vx;
+				circle.y += circle.vy;
+				if (circle.x < circle.radius || circle.x > canvas.width - circle.radius) {
+					circle.vx = -circle.vx;
+				}
+				if (circle.y < circle.radius || circle.y > canvas.height - circle.radius) {
+					circle.vy = -circle.vy;
+				}
+			}
+			requestAnimationFrame(draw);
+		}
+
+		draw();
+
+		// Add mousemove event listener to canvas
+		canvas.addEventListener("mousemove", function(event) {
+            var mouseX = event.clientX;
+            var mouseY = event.clientY;
+            for (var i = 0; i < circles.length; i++) {
+                var circle = circles[i];
+                if (!circle.isHovered) {
+                    var dx = circle.x - mouseX;
+                    var dy = circle.y - mouseY;
+                    var distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < circle.radius) {
+                        circle.isHovered = true;
+                        numRemovedCircles++;
+                        if (circle.disappearedAt === null) {
+                            circle.disappearedAt = circles.filter(c => c.disappearedAt !== null).length + 1;
+                        }
+                    }
+                }
+            }
+            // selection event
+            if (numRemovedCircles === Math.floor(circles.length*0.8) && !selectionEventTriggered) {
+                // level += 100;
+                for (var i = 0; i < circles.length; i++) {
+                    // var circle = circles[i];
+                    if (circles[i].isHovered) {
+                        circles[i] = getRandomUnhoveredCircle();
+                        circles[i].x = Math.random() * (canvas.width - circles[i].radius * 2) + circles[i].radius;
+			            circles[i].y = Math.random() * (canvas.height - circles[i].radius * 2) + circles[i].radius;
+                        circles[i].isHovered = true;
+                        circles[i].vx *= Math.random() * 0.3 + 1.0;
+                        circles[i].vy  *= Math.random() * 0.3 + 1.0;
+                    }
+                }
+                selectionEventTriggered = true
+            }
+            if (numRemovedCircles === circles.length) {
+                level++;
+                for (var i = 0; i < circles.length; i++) {
+                    var circle = circles[i];
+                    circle.isHovered = false;
+                }
+                numRemovedCircles = 0;
+                selectionEventTriggered = false
+            }
+        });
+
+        function getRandomUnhoveredCircle() {
+            // Create an array of indices of circles that have isHovered property set to false
+            const unhoveredCircleIndices = [];
+            for (let i = 0; i < circles.length; i++) {
+                if (!circles[i].isHovered) {
+                    unhoveredCircleIndices.push(i);
+                }
+            }
+            
+            // Randomly pick an index from the array
+            const randomIndex = unhoveredCircleIndices[Math.floor(Math.random() * unhoveredCircleIndices.length)];
+            
+            // Create a deep copy of the circle object at the selected index
+            const circleCopy = Object.assign({}, circles[randomIndex]);
+
+            return circleCopy;
+        }
+
+		function getRandomPastelColor() {
+			var hue = Math.floor(Math.random() * 360);
+			var pastel = 'hsl(' + hue + ', 100%, 85%)';
+			return pastel;
+        }
+    </script>
+</body>
+</html>
